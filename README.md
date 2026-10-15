@@ -7,7 +7,7 @@
 ## 快速开始
 
 1. 将本目录的全部内容放到 GitHub 仓库根目录，包含 `.github/workflows/update.yml`，提交到默认分支。
-2. 根据需要修改 `config.yaml`。默认每小时第 17 分钟运行，生成 `tcp.yaml`、`udp.yaml`、`all.yaml`。
+2. 根据需要修改 `config.yaml`。默认每周一台北时间 08:17（UTC 00:17）运行，生成 `tcp.yaml`、`udp.yaml`、`all.yaml`。三份订阅均默认开启链式代理，前置代理组为 `👉🏽 手动选择Ⅲ`。
 3. 打开仓库 **Actions → 更新 VPN Gate 订阅 → Run workflow**，首次可将 `publish` 关闭，检查生成的 Artifact。
 4. 开启 `publish` 运行成功后，工作流会创建或更新 `subscriptions` 分支。发布任务通过自动 `GITHUB_TOKEN` 请求 `contents: write`，同仓库通常无需 PAT。
 5. 将对应文件的 Raw 地址填入 Mihomo 主配置。
@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/aquqa/VPNGate2Mihomo/subscriptions/all.yaml
 
 ## 长期配置与链式代理
 
-`config.yaml` 的 `defaults` 是基础设置，`profiles` 中每个方案可覆盖其中的字段。添加长期链式订阅时，取消下方示例对应配置的注释：
+`config.yaml` 的 `defaults` 是基础设置，`profiles` 中每个方案可覆盖其中的字段。默认三个方案均继承已开启的链式代理，保持现有文件名。若需要额外生成名为 `tcp-chain.yaml` 的长期订阅，可取消配置中 `tcp-chain` 示例的注释：
 
 ```yaml
 profiles:

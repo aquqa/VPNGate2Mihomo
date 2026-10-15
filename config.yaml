@@ -3,8 +3,8 @@ version: 1
 defaults:
   protocol: both
   chain:
-    enabled: false
-    dialer_proxy: ""
+    enabled: true
+    dialer_proxy: "👉🏽 手动选择Ⅲ"
   countries: []
   max_nodes: 100
   sort_by: score
