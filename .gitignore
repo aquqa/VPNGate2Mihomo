@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+.tools/
+.coverage
+.env
+*.log

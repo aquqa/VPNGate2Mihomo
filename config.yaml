@@ -1,0 +1,30 @@
+version: 1
+
+defaults:
+  protocol: both
+  chain:
+    enabled: false
+    dialer_proxy: ""
+  countries: []
+  max_nodes: 100
+  sort_by: score
+
+# Scheduled runs generate every profile. A manual override generates one file
+# named tcp.yaml / udp.yaml / all.yaml, with -chain when chaining is enabled.
+profiles:
+  tcp:
+    protocol: tcp
+  udp:
+    protocol: udp
+  all:
+    protocol: both
+  # tcp-chain:
+  #   protocol: tcp
+  #   chain:
+  #     enabled: true
+  #     dialer_proxy: "👉🏽 手动选择Ⅲ"
+
+fetch:
+  timeout_seconds: 30
+  retries: 3
+  concurrency: 4

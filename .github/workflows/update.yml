@@ -1,0 +1,122 @@
+name: 更新 VPN Gate 订阅
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "指定 config.yaml 中的方案；留空按默认规则生成"
+        type: string
+        required: false
+        default: ""
+      protocol:
+        description: "协议；inherit 沿用配置"
+        type: choice
+        default: inherit
+        options: [inherit, tcp, udp, both]
+      chain:
+        description: "链式代理；inherit 沿用配置"
+        type: choice
+        default: inherit
+        options: [inherit, "on", "off"]
+      dialer_proxy:
+        description: "前置代理组名称；留空沿用配置"
+        type: string
+        required: false
+        default: ""
+      countries:
+        description: "国家代码，如 JP,KR；留空沿用；* 表示全部"
+        type: string
+        required: false
+        default: ""
+      max_nodes:
+        description: "节点上限；留空沿用；0 表示不限"
+        type: string
+        required: false
+        default: ""
+      sort_by:
+        description: "来源数据排序"
+        type: choice
+        default: inherit
+        options: [inherit, score, speed, country]
+      publish:
+        description: "发布到 subscriptions 分支；关闭则只生成下载文件"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vpngate-subscriptions
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 获取源码
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 设置 Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: 安装依赖
+        run: python -m pip install -r requirements.txt
+
+      - name: 运行离线回归测试
+        run: python -m unittest discover -s tests -v
+
+      - name: 采集并生成订阅
+        env:
+          INPUT_PROFILE: ${{ inputs.profile }}
+          INPUT_PROTOCOL: ${{ inputs.protocol || 'inherit' }}
+          INPUT_CHAIN: ${{ inputs.chain || 'inherit' }}
+          INPUT_DIALER_PROXY: ${{ inputs.dialer_proxy }}
+          INPUT_COUNTRIES: ${{ inputs.countries }}
+          INPUT_MAX_NODES: ${{ inputs.max_nodes }}
+          INPUT_SORT_BY: ${{ inputs.sort_by || 'inherit' }}
+        run: python scripts/main.py
+
+      - name: 使用固定版本 Mihomo 校验配置
+        run: python scripts/validate.py --download
+
+      - name: 保存本次生成结果
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vpngate-providers
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: generate
+    if: github.event_name == 'schedule' || inputs.publish == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: 获取发布脚本
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 设置 Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: 下载已校验结果
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vpngate-providers
+          path: dist/
+
+      - name: 更新订阅分支
+        run: python scripts/publish.py
